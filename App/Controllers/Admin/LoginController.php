@@ -11,6 +11,74 @@ class LoginController extends Controller
     */
     public function index()
     {
-        
+        $loginmodel = $this->load->model('Login');
+        if($loginmodel->isLogged())
+        {
+            return $this->url->redirectTo('/admin');
+        }
+        $data['errors'] = $this->errors;
+
+        return $this->view->render('admin/users/login',$data);
+    }
+    /**
+    * Submit Login form
+    *
+    * @return mixed
+    */
+    public function submit()
+    {
+        if($this->isValid())
+        {
+            $loginModel = $this->load->model('login');
+            $loggedInUser = $loginModel->user();
+            if($this->request->post('remember'))
+            {
+                $this->cookie->set('login');
+            }
+            else{
+                $this->session->set('login');
+            }
+            $json = [];
+            $json['success'] = "Welcome Back ".$loggedInUser->first_name;
+            $json['redirect']= $this->url->link('/admin');
+            return $this->json($json);
+        }
+        else{
+            $json = [];
+            $json['errors'] = implode('<br>', $this->errors);
+            return $this->json($json);
+        }
+    }
+    /**
+    * Validate Login Form
+    *
+    * @return bool
+    */
+    private function isValid()
+    {
+        $email = $this->request->post('email');
+        $password = $this->request->post('password');
+        if(! $email)
+        {
+            $this->errors[] = 'Please Insert Email address';
+        }
+        elseif(! filter_var($email,FILTER_VALIDATE_EMAIL))
+        {
+            $this->errors[] = 'Please Insert Valid Email';
+        }
+
+        if(! $password)
+        {
+            $this->errors[] = 'Please Insert Password';
+        }
+        if(! $this->errors)
+        {
+            $loginModel = $this->load->model('login');
+            if(! $loginModel->isValidLogin($email,$password))
+            {
+                $this->errors[] = 'Invalid Login Data';
+            }
+        }
+        return empty($this->errors);
     }
 }

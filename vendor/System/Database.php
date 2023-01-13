@@ -106,7 +106,7 @@ class Database{
      *
      * @array
      */
-    private $orerBy = [];
+    private $orderBy = [];
 
      /**
      * Constructor
@@ -115,6 +115,7 @@ class Database{
      */
     public function __construct(Application $app)
     {
+          $this->app = $app;
           if(! $this->isConnected())
           {
                $this->connect();
@@ -137,15 +138,19 @@ class Database{
     private function connect()
     {
           $connectionData = $this->app->file->call('config.php');
+
           extract($connectionData);
+
           try{
-               static::$connection = new PDO('mysql:host='.$server.';dbname = '.$dbname,$dbuser,$dbpass);
+               static::$connection = new PDO('mysql:host=' . $server . ';dbname=' . $dbname, $dbuser, $dbpass);
+               
                static::$connection->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_OBJ);
 
                static::$connection->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
   
               static::$connection->exec('SET NAMES utf8');
           }catch(PDOException $ex){
+               
                die($ex->getMessage());
           }
     }
@@ -286,9 +291,9 @@ class Database{
                $sql .= ' HAVING ' . implode(' ', $this->havings) . ' ';
            }
   
-           if ($this->orerBy) 
+           if ($this->orderBy) 
            {
-               $sql .= ' ORDER BY ' . implode(' ' , $this->orerBy);
+               $sql .= ' ORDER BY ' . implode(' ' , $this->orderBy);
            }
   
            if ($this->limit) 
@@ -478,7 +483,11 @@ class Database{
      private function addToBindings($value)
      {
 
-          $this->bindings[] = _e($value);
+          if (is_array($value)) {
+               $this->bindings = array_merge($this->bindings, array_values($value));
+           } else {
+               $this->bindings[] = $value;
+           }
      }
        /**
      * Execute the given sql statement
@@ -497,7 +506,7 @@ class Database{
                $query = $this->connection()->prepare($sql);
                foreach($bindings as $key => $value)
                {
-                    $query->bindValue($key + 1, _e($$value));
+                    $query->bindValue($key + 1, _e($value));
                }
                $query->execute();
                return $query;
@@ -531,7 +540,7 @@ class Database{
          $this->data = [];
          $this->joins = [];
          $this->wheres = [];
-         $this->orerBy = [];
+         $this->orderBy = [];
          $this->havings = [];
          $this->groupBy = [];
          $this->selects = [];
