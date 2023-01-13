@@ -6,6 +6,12 @@ class Application{
      * @var array
      */
     private $container = [];
+     /**
+     * Application Object
+     *
+     * @var \System\Application
+     */
+    private static $instance;
     /**
      * Constructor
      * @param /System/File.php
@@ -15,6 +21,21 @@ class Application{
         $this->share('file',$file);
         $this->registerClasses();
         $this->loadHelpers();
+        
+    }
+     /**
+     * Get Application Instance
+     *
+     * @param \System\File $file
+     * @return \System\Application
+     */
+    public static function getInstance($file = null)
+    {
+        if(is_null(static::$instance))
+        {
+            static::$instance = new static ($file);
+        }
+        return static::$instance;
     }
      /**
      * Run The Application
@@ -24,15 +45,9 @@ class Application{
     public function run()
     {
         $this->session->start();
-    }
-    /**
-     * Detrmain wether the given file path exists
-     * @param string $file
-     * @return bool
-     */
-    public function exists($file)
-    {
-        return file_exists($file);
+        $this->request->prepareUrl();
+        $this->file->call('App\index.php');
+        list($controller, $method, $arguments) = $this->route->getProperRoute();
     }
     /**
      * register classes in spl autoload register
@@ -52,16 +67,16 @@ class Application{
         if(strpos($class , 'App') === 0)
         {
             //get the class from application folder
-            $file = $this->file->to($class.'.php');
+            $file = $class.'.php';
         }
         else
         {
             //get the class from vendor folder
-            $file = $this->file->toVendor($class.'.php');
+            $file = 'vendor/'.$class.'.php';
         }
         if($this->file->exists($file))
         {
-            $this->file->require($file);
+            $this->file->call($file);
         }
     }
     /**
@@ -118,7 +133,7 @@ class Application{
      */
     private function loadHelpers()
     {
-        $this->file->require($this->file->toVendor('helpers.php'));
+        $this->file->call('vendor/helpers.php');
     }
     /**
      * determine if the given key is shared through application
@@ -136,15 +151,19 @@ class Application{
     private function coreClasses()
     {
         return [
-            'request'           => 'System\\Http\\Request',
-            'response'          => 'System\\Http\\Response',
-            'session'           => 'System\\Session',
-            'cookie'            => 'System\\Cookie',
-            'load'              => 'System\\Loader',
-            'html'              => 'System\\Html',
-            'db'                => 'System\\Database',
-            'view'              => 'System\\View\\ViewFactory'
-        ];
+            'request'       => 'System\\Http\\Request',
+            'response'      => 'System\\Http\\Response',
+            'session'       => 'System\\Session',
+            'route'         => 'System\\Route',
+            'cookie'        => 'System\\Cookie',
+            'load'          => 'System\\Loader',
+            'html'          => 'System\\Html',
+            'db'            => 'System\\Database',
+            'view'          => 'System\\View\\ViewFactory',
+            'url'           => 'System\\Url',
+            'validator'     => 'System\\Validation',
+            'pagination'    => 'System\\Pagination',
+       ];
     }
     /**
      * check if class is in coreclasses container
