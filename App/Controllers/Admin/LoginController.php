@@ -10,16 +10,18 @@ class LoginController extends Controller
     * @return mixed
     */
     public function index()
-    {
-        $loginmodel = $this->load->model('Login');
-        if($loginmodel->isLogged())
-        {
+    {                  
+        $loginModel = $this->load->model('Login');
+
+        if ($loginModel->isLogged()) {
             return $this->url->redirectTo('/admin');
         }
+
         $data['errors'] = $this->errors;
 
-        return $this->view->render('admin/users/login',$data);
+        return $this->view->render('admin/users/login', $data);
     }
+
     /**
     * Submit Login form
     *
@@ -29,14 +31,16 @@ class LoginController extends Controller
     {
         if($this->isValid())
         {
-            $loginModel = $this->load->model('login');
+            $loginModel = $this->load->model('Login');
+
             $loggedInUser = $loginModel->user();
+
             if($this->request->post('remember'))
             {
-                $this->cookie->set('login');
+                $this->cookie->set('login',$loggedInUser->code);
             }
             else{
-                $this->session->set('login');
+                $this->session->set('login',$loggedInUser->code);
             }
             $json = [];
             $json['success'] = "Welcome Back ".$loggedInUser->first_name;
@@ -58,27 +62,25 @@ class LoginController extends Controller
     {
         $email = $this->request->post('email');
         $password = $this->request->post('password');
-        if(! $email)
-        {
+
+        if (! $email) {
             $this->errors[] = 'Please Insert Email address';
-        }
-        elseif(! filter_var($email,FILTER_VALIDATE_EMAIL))
-        {
+        } elseif (! filter_var($email , FILTER_VALIDATE_EMAIL)) {
             $this->errors[] = 'Please Insert Valid Email';
         }
 
-        if(! $password)
-        {
+        if (! $password) {
             $this->errors[] = 'Please Insert Password';
         }
-        if(! $this->errors)
-        {
-            $loginModel = $this->load->model('login');
-            if(! $loginModel->isValidLogin($email,$password))
-            {
+
+        if (! $this->errors) {
+            $loginModel = $this->load->model('Login');
+
+            if (! $loginModel->isValidLogin($email, $password)) {
                 $this->errors[] = 'Invalid Login Data';
             }
         }
+
         return empty($this->errors);
     }
 }
